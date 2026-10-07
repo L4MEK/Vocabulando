@@ -1,0 +1,288 @@
+/* =========================================================
+   VOCABULANDO — estilos
+   Classes aplicadas pelo JS: .blinking, .virar, .balancar, .show
+   Cores das letras/teclas são aplicadas pelo JS via style inline
+   ========================================================= */
+
+/* ============ Tema (escuro por padrão) ============ */
+:root {
+  --fundo: #0f1220;
+  --superficie: #181c30;     /* quadrados vazios */
+  --borda: #2e3452;
+  --borda-ativa: #6b739c;    /* quadrado com letra digitada */
+  --texto: #f2f4ff;
+  --branco: var(--texto);    /* usado pelo SVG do botão apagar (no HTML) */
+  --tecla: #2a3050;
+  --tecla-hover: #363d63;
+
+  --destaque-1: #8b7bff;     /* roxo */
+  --destaque-2: #4cc9f0;     /* azul */
+  --raio: 10px;
+}
+
+/* Tema claro: só o que muda */
+@media (prefers-color-scheme: light) {
+  :root {
+    --fundo: #f4f5fb;
+    --superficie: #ffffff;
+    --borda: #d3d7ea;
+    --borda-ativa: #8a91b8;
+    --texto: #1c2038;
+    --tecla: #dfe2f1;
+    --tecla-hover: #cfd3e8;
+  }
+}
+
+/* ============ Base ============ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  /* Respeita entalhes e barras do celular */
+  padding:
+    env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+/* Brilho roxo no topo, pulsando devagar */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60rem 30rem at 50% -10%, rgba(139, 123, 255, 0.18), transparent 60%);
+  animation: brilho 4s ease-in-out infinite;
+}
+
+main {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.9rem, 3.5vh, 2rem);
+  padding: 1rem 0.75rem 1.25rem;
+}
+
+/* ============ Logo ============ */
+.logo {
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  user-select: none;
+  /* Degradê roxo -> azul -> roxo, com o dobro da largura para poder deslizar */
+  background: linear-gradient(90deg, var(--destaque-1), var(--destaque-2), var(--destaque-1));
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradiente-logo 3s ease-in-out infinite alternate;
+}
+
+/* ============ Quadro ============ */
+.quadro {
+  --lado: min(15vw, 62px);
+  display: grid;
+  grid-template-columns: repeat(5, var(--lado));
+  grid-auto-rows: var(--lado);
+  gap: 0.4rem;
+}
+
+.quadrados {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--superficie);
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  font-size: calc(var(--lado) * 0.55);
+  font-weight: 800;
+  text-transform: uppercase;
+  user-select: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+/* Letra digitada, linha ainda não enviada.
+   :where() zera a especificidade para não atrapalhar .virar e .balancar */
+.quadrados:where(:not(:empty):not([style])) {
+  border-color: var(--borda-ativa);
+  animation: pop 0.12s ease-out;
+}
+
+/* Linha já enviada: o JS pinta com style inline */
+.quadrados[style] {
+  border-color: transparent;
+  cursor: default;
+}
+
+/* Quadrado ativo, onde a próxima letra entra */
+.quadrados.blinking {
+  border-color: var(--destaque-2);
+  animation: piscar 1.1s ease-in-out infinite;
+}
+
+/* Flip ao enviar a palavra (o JS escalona 100ms entre os quadrados) */
+.quadrados.virar {
+  animation:
+    virar-giro 0.5s ease-in-out,
+    virar-cor 0.5s steps(2, jump-none);
+}
+
+/* Tremor de palavra inválida ou linha incompleta */
+.quadrados.balancar {
+  animation: balancar 0.4s ease;
+}
+
+/* ============ Teclado ============ */
+/* Grade de 20 colunas: letra = 2, ENTER/apagar = 3, <div> vazio = 1 (meio espaço entre as fileiras) */
+.teclado {
+  display: grid;
+  grid-template-columns: repeat(20, minmax(0, 1fr));
+  grid-auto-rows: clamp(3rem, 7vh, 3.6rem);
+  gap: 0.35rem;
+  width: min(100%, 520px);
+}
+
+.tecla {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tecla);
+  color: var(--texto);
+  border: none;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  transition: background 0.15s ease, transform 0.08s ease;
+}
+
+.tecla.especial {
+  grid-column: span 3;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+}
+
+.tecla svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Hover só onde existe mouse (evita hover "grudado" no celular) */
+@media (hover: hover) {
+  .tecla:hover {
+    background: var(--tecla-hover);
+  }
+}
+
+.tecla:active {
+  transform: scale(0.94);
+}
+
+.tecla:focus-visible {
+  outline: 2px solid var(--destaque-2);
+  outline-offset: 2px;
+}
+
+/* ============ Mensagem (toast) ============ */
+/* O JS controla display e a classe .show; o fade é feito pela transition */
+.mensagem {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
+  left: 50%;
+  z-index: 10;
+  padding: 0.7rem 1.2rem;
+  background: var(--texto);
+  color: var(--fundo);
+  border-radius: var(--raio);
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -8px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.mensagem.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.mensagem:empty {
+  display: none;
+}
+
+/* ============ Animações ============ */
+/* Logo: desliza o degradê de um lado ao outro */
+@keyframes gradiente-logo {
+  from { background-position: 0% 50%; }
+  to   { background-position: 100% 50%; }
+}
+
+/* Brilho do topo */
+@keyframes brilho {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* Letra entrando no quadrado */
+@keyframes pop {
+  0%   { transform: scale(0.9); }
+  60%  { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+
+/* Quadrado ativo piscando */
+@keyframes piscar {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(76, 201, 240, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(76, 201, 240, 0.35); }
+}
+
+/* Flip: giro no eixo X... */
+@keyframes virar-giro {
+  0%   { transform: rotateX(0); }
+  50%  { transform: rotateX(90deg); }
+  100% { transform: rotateX(0); }
+}
+
+/* ...e a cor só aparece depois da metade do giro (volta pra cor pintada pelo JS) */
+@keyframes virar-cor {
+  from { background-color: var(--superficie); }
+}
+
+/* Tremor lateral */
+@keyframes balancar {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+/* ============ Acessibilidade ============ */
+/* Quem pede menos movimento: animações terminam na hora e não se repetem */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
